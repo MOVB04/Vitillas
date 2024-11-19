@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vB Vitillas - Shop</title>
+    <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+    <script>
+        // EmailJS-Initialisierung
+        (function () {
+            emailjs.init("-MBfdgjSQR4A68jFo");
+        })();
+    </script>
+    <style>
+        /* Allgemeine Stile */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: beige;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: #f4f4f4;
+            border-bottom: 2px solid #ccc;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        #cart-button {
+            padding: 0.5rem 1rem;
+            background-color: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        main {
+            padding: 2rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            margin-top: 1rem;
+            background-color: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        form label, form input, form select {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <h1>vB Vitillas</h1>
+        <button id="cart-button" onclick="openCart()">Warenkorb</button>
+    </header>
+
+    <!-- Hauptinhalt -->
+    <main>
+        <!-- Shop-Bereich -->
+        <section id="shop-section">
+            <h2>Vitillas – Dein Trainingstool</h2>
+            <p>Mit diesen Vitillas kannst du deinen Schlag verbessern!</p>
+            <label for="menge">Menge auswählen:</label>
+            <select id="menge">
+                <option value="9">9 Stück – 9,99 €</option>
+                <option value="15">15 Stück – 14,99 €</option>
+                <option value="21">21 Stück – 19,99 €</option>
+            </select>
+            <button onclick="addToCart()">Zum Warenkorb hinzufügen</button>
+        </section>
+
+        <!-- Warenkorb -->
+        <section id="cart-section" class="hidden">
+            <h2>Warenkorb</h2>
+            <ul id="cart-list"></ul>
+            <p id="total-price">Gesamt: 0,00 €</p>
+            <button onclick="goToCheckout()">Checkout</button>
+        </section>
+
+        <!-- Checkout -->
+        <section id="checkout-section" class="hidden">
+            <h2>Checkout</h2>
+            <form id="checkout-form" onsubmit="sendOrder(event)">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+
+                <label for="email">E-Mail-Adresse:</label>
+                <input type="email" id="email" name="email" required>
+
+                <label for="adresse">Adresse:</label>
+                <input type="text" id="adresse" name="adresse" required>
+
+                <label for="stadt">Stadt:</label>
+                <input type="text" id="stadt" name="stadt" required>
+
+                <label for="plz">PLZ:</label>
+                <input type="text" id="plz" name="plz" required>
+
+                <button type="submit">Bestellung abschicken</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        // Warenkorb-Daten
+        let cart = [];
+
+        // Produkt zum Warenkorb hinzufügen
+        function addToCart() {
+            const menge = document.getElementById("menge").value;
+            const preis = menge == "9" ? 9.99 : menge == "15" ? 14.99 : 19.99;
+            cart.push({ menge, preis });
+            alert(`${menge} Stück wurden zum Warenkorb hinzugefügt.`);
+        }
+
+        // Warenkorb anzeigen
+        function openCart() {
+            document.getElementById("shop-section").classList.add("hidden");
+            document.getElementById("cart-section").classList.remove("hidden");
+            updateCartDisplay();
+        }
+
+        // Warenkorb aktualisieren
+        function updateCartDisplay() {
+            const cartList = document.getElementById("cart-list");
+            cartList.innerHTML = "";
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                total += item.preis;
+                const li = document.createElement("li");
+                li.textContent = `${item.menge} Stück – ${item.preis.toFixed(2)} €`;
+                cartList.appendChild(li);
+            });
+
+            document.getElementById("total-price").textContent = `Gesamt: ${total.toFixed(2)} €`;
+        }
+
+        // Zur Checkout-Seite navigieren
+        function goToCheckout() {
+            document.getElementById("cart-section").classList.add("hidden");
+            document.getElementById("checkout-section").classList.remove("hidden");
+        }
+
+        // Bestellung absenden
+        function sendOrder(event) {
+            event.preventDefault();
+
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const adresse = document.getElementById("adresse").value;
+            const stadt = document.getElementById("stadt").value;
+            const plz = document.getElementById("plz").value;
+
+            const produktListe = cart
+                .map(item => `${item.menge} Stück – ${item.preis.toFixed(2)} €`)
+                .join(", ");
+            const total = cart.reduce((sum, item) => sum + item.preis, 0).toFixed(2);
+
+            // Email senden mit EmailJS
+            emailjs.send("service_mxa8z77", "template_y4asyuv", {
+                name: name,
+                email: email,
+                adresse: adresse,
+                stadt: stadt,
+                plz: plz,
+                produkte: produktListe,
+                gesamt: total,
+            }).then(() => {
+                alert("Bestellung wurde erfolgreich abgeschickt!");
+                cart = [];
+                document.getElementById("checkout-form").reset();
+                document.getElementById("checkout-section").classList.add("hidden");
+                document.getElementById("shop-section").classList.remove("hidden");
+            }).catch(error => {
+                console.error("Fehler beim Senden der E-Mail:", error);
+                alert("Es gab ein Problem beim Senden der Bestellung. Bitte versuchen Sie es später erneut.");
+            });
+        }
+    </script>
+</body>
+</html>
